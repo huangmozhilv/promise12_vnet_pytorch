@@ -20,6 +20,7 @@ class DiceLoss(Function):
     def __init__(self, *args, **kwargs):
         pass
 
+    @staticmethod
     def forward(self, input, target, save=True): # it seems official v-net sum up the dice coefficients over a minibatch. but not sure how it does with backward gradients? by Chao. In this case, mean is used both for forward and backward for each minibatch.
         # input shape: softmax output. shape is [batch_size, 2 (background and foreground), z*y*x]??? by Chao.
         # target shape: [batch_size, z, y, x]?? by Chao.
@@ -78,7 +79,7 @@ class DiceLoss(Function):
             # the target volume can be empty - so we still want to
             # end up with a score of 1 if the result is 0/0
             dice[i] = 2*self.intersect[i] / (self.union[i] + eps)
-            print('union: {}\t intersect: {}\t dice_coefficient: {:.7f}'.format(str(self.union[i]), str(self.intersect[i]), dice[i])) # target_sum: {:.0f} pred_sum: {:.0f}; target_sum, result_sum,
+            # print('union: {}\t intersect: {}\t dice_coefficient: {:.7f}'.format(str(self.union[i]), str(self.intersect[i]), dice[i])) # target_sum: {:.0f} pred_sum: {:.0f}; target_sum, result_sum,
 
             # intersect = torch.dot(result, target)
             # # binary values so sum the same as sum of squares
@@ -98,6 +99,7 @@ class DiceLoss(Function):
             out = out.cuda() # added by Chao.
         return out
 
+    @staticmethod
     def backward(self, grad_output): # Update the weights of the network, typically using a simple update rule: weight = weight - learning_rate * gradient (refer: https://seba-1511.github.io/tutorials/beginner/blitz/neural_networks_tutorial.html )
         # print("grad_output:{}".format(grad_output))
         # why fix grad_output:tensor([1.])??? By Chao.
@@ -121,7 +123,8 @@ class DiceLoss(Function):
         return grad_input, None # Return None for the gradient of values that don’t actually need gradients
 
 def dice_loss(input, target):
-    return DiceLoss()(input, target)
+    #return DiceLoss()(input, target)
+    return DiceLoss.apply(input, target)
 
 def dice_error(input, target):
     eps = 0.00001
